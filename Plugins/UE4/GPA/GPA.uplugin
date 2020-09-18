@@ -1,0 +1,28 @@
+{
+	"FileVersion": 1,
+	"Version": 1,
+	"VersionName": "1.0",
+	"FriendlyName": "GPA",
+	"Description": "GPA(Game Performance Analytics) 플러그인은 UE4, Unity 로 제작된 게임의 성능 분석을 위한 플러그인으로 최소한의 성능매트릭을 수집하고 분석합니다.(실시간 게임 성능 모니터링 제공, 디바이스 별 성능 지표 제공, 성능 저하 구간 인사이트 제공)",
+	"Category": "Profiling",
+	"CreatedBy": "NCSOFT",
+	"CreatedByURL": "https://kr.ncsoft.com/en/index.do",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"CanContainContent": false,
+	"IsBetaVersion": false,
+	"Installed": false,
+	"Modules": [
+    {
+      "Name": "GPA",
+      "Type": "Runtime",
+      "LoadingPhase": "Default",
+	  "WhitelistPlatforms": [
+				"Win64",
+				"Win32",
+				"Android"
+	  ]
+    }
+	]
+}

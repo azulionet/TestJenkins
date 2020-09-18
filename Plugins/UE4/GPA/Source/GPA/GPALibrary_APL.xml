@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--LibOVRPlatform plugin additions-->
+<root xmlns:android="http://schemas.android.com/apk/res/android">
+	<init>
+		<log text="GPALibrary_UPL_XML init"/>
+	</init>
+
+  <resourceCopies>
+    <log text="GPA lib staging : $S(PluginDir)"/>
+
+    <isArch arch="arm64-v8a">
+      <log text="arm64-v8a - prebuild copy library"/>
+      <copyFile src="$S(PluginDir)/lib/arm64-v8a/libncgpa.so"
+			dst="$S(BuildDir)/libs/arm64-v8a/libncgpa.so" />
+    </isArch>
+	<isArch arch="armeabi-v7a">
+      <log text="armeabi-v7a - prebuild copy library"/>
+      <copyFile src="$S(PluginDir)/lib/armeabi-v7a/libncgpa.so"
+			dst="$S(BuildDir)/libs/armeabi-v7a/libncgpa.so" />
+    </isArch>
+
+  </resourceCopies>
+
+</root>

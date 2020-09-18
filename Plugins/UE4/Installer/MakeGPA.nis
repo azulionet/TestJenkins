@@ -1,0 +1,404 @@
+;##########################################################
+; Build Params
+; GPA_GAMENAME
+; GPA_VERSION
+; GPA_DEBUG
+
+;##########################################################
+; pre processor
+
+!include "FileFunc.nsh"
+
+!ifndef GPA_VERSION
+  !define /file GPA_INI "..\GPA\GPA.ini"
+!endif
+
+
+;##########################################################
+; define
+
+!define PRODUCT_NAME            "GPA"
+
+!ifndef GPA_VERSION
+  !define PRODUCT_VERSION         "1.0.0.0"
+!else
+  !define PRODUCT_VERSION         "${GPA_VERSION}"
+!endif
+
+
+!define PRODUCT_PUBLISHER       "NCSoft"
+; !define PRODUCT_WEBSITE       "https://wiki.ncsoft.com/display/TECHPM/%5BGPA%5D+Game+Performance+Analytics"
+!define EXEFILE_NAME            "GPA"
+!define PLUGIN_ROOT_FOLDER_NAME "GPA"
+!define EXEFULL_NAME            "${EXEFILE_NAME}.exe"
+!define EXEFILE_DIR             "C:\${PRODUCT_NAME}"
+
+!ifndef GPA_GAMENAME
+
+  !ifndef GPA_DEBUG
+    !define INSTALLER_NAME          "${PRODUCT_NAME}_installer.exe"
+  !else
+    !define INSTALLER_NAME          "${PRODUCT_NAME}_installer_${GPA_DEBUG}.exe"
+  !endif
+
+!else ; GAMENAME defined
+
+  !ifndef GPA_DEBUG
+    !define INSTALLER_NAME          "${PRODUCT_NAME}_${GPA_GAMENAME}_installer.exe"
+  !else
+    !define INSTALLER_NAME          "${PRODUCT_NAME}_${GPA_GAMENAME}_installer_${GPA_DEBUG}.exe"
+  !endif
+
+!endif
+
+BrandingText                    ":: ${PRODUCT_PUBLISHER}"
+RequestExecutionLevel           admin
+
+
+;##########################################################
+; Installer version
+
+VIProductVersion              "${PRODUCT_VERSION}"
+VIAddVersionKey /LANG=1042    "FileDescription" "UE4 plugin installer"
+VIAddVersionKey /LANG=1042    "ProductName" "${INSTALLER_NAME}"
+VIAddVersionKey /LANG=1042    "CompanyName" "NC Soft"
+
+!ifdef GPA_VERSION
+  VIAddVersionKey /LANG=1042  "ProductVersion" "${GPA_GAMENAME} ${GPA_VERSION} / ${PRODUCT_VERSION}"
+!else
+  VIAddVersionKey /LANG=1042  "ProductVersion" "${PRODUCT_VERSION}"
+!endif
+
+
+;##########################################################
+; string resources
+
+!define GPA_TITLE           "Welcome GPA"
+!define GPA_TEXT            "GPA Installation"
+!define GPA_FOLDER_ALARM    "Select unreal project folder or Engine root folder."
+!define GPA_SELECT_ERROR    "Selected folder is not unreal project folder. Install anyway?"
+!define GPA_INSTALL_DETAIL  "Extracting package..."
+!define GPA_OVERWRITE       "This software already installed on your project, $\nFound $\"GPA $oldVersion$\", Do you want overwrite  $\"GPA $versionTemp$\"?"
+
+!define GPA_UNINSTALL_TITLE "Delete GPA"
+!define GPA_UNINSTALL_TEXT  "GPA Uninstallation"
+
+
+;##########################################################
+; MUI Settings, https://nsis.sourceforge.io/Docs/Modern%20UI/Readme.html
+
+!include "MUI.nsh"
+!define MUI_COMPONENTSPAGE_SMALLDESC
+!define MUI_ICON "resource\UE4.ico"
+!define MUI_ABORTWARNING
+!define MUI_FINISHPAGE_NOAUTOCLOSE
+
+!define MUI_UNICON "resource\uninstall.ico"
+!define MUI_UNABORTWARNING
+!define MUI_UNFINISHPAGE_NOAUTOCLOSE
+
+
+;##########################################################
+; MUI header image
+
+; installer or uninstaller Header image (150x57) - header image
+; !define MUI_HEADERIMAGE
+; !define MUI_HEADERIMAGE_BITMAP_NOSTRETCH
+; !define MUI_HEADERIMAGE_BITMAP "image_file_name.bmp" ; 150x57
+; !define MUI_HEADERIMAGE_UNBITMAP_NOSTRETCH
+; !define MUI_HEADERIMAGE_UNBITMAP "image_file_name.bmp" ; 150x57
+; !define MUI_BGCOLOR FFFFFF ; Default: FFFFFF
+
+; installer Welcome & Finish page image (191x290)
+; !define MUI_WELCOMEFINISHPAGE_BITMAP_NOSTRETCH
+; !define MUI_WELCOMEFINISHPAGE_BITMAP "image_file_name.bmp"
+
+; uninstaller Welcome & Finish page image (191x290)
+; !define MUI_UNWELCOMEFINISHPAGE_BITMAP_NOSTRETCH
+; !define MUI_UNWELCOMEFINISHPAGE_BITMAP "img\welcome_uninst.bmp"
+
+
+;##########################################################
+; MUI page
+
+Var PluginsFolder
+
+!define MUI_WELCOMEPAGE_TITLE '${GPA_TITLE}'
+!define MUI_WELCOMEPAGE_TEXT '${GPA_TEXT}'
+!insertmacro MUI_PAGE_WELCOME
+!insertmacro MUI_PAGE_LICENSE "resource\license.txt"
+
+!define MUI_PAGE_CUSTOMFUNCTION_PRE CheckPreDir
+!define MUI_PAGE_CUSTOMFUNCTION_LEAVE CheckLeaveDir
+
+!define MUI_DIRECTORYPAGE_VARIABLE $PluginsFolder
+!insertmacro MUI_PAGE_DIRECTORY
+!insertmacro MUI_PAGE_INSTFILES
+!insertmacro MUI_PAGE_FINISH
+
+
+;##########################################################
+; MUI uninstall page
+
+!define MUI_WELCOMEPAGE_TITLE '${GPA_UNINSTALL_TITLE}'
+!define MUI_WELCOMEPAGE_TEXT '${GPA_UNINSTALL_TEXT}'
+!insertmacro MUI_UNPAGE_WELCOME
+!insertmacro MUI_UNPAGE_CONFIRM
+!insertmacro MUI_UNPAGE_INSTFILES
+
+
+;##########################################################
+; MUI Language
+
+!insertmacro MUI_LANGUAGE "Korean"
+
+
+;##########################################################
+; NSIS Settings
+
+Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"
+OutFile "${INSTALLER_NAME}"
+InstallDir ""
+ShowInstDetails show
+ShowUninstDetails show
+SetCompress off
+SetOverWrite on
+
+
+;##########################################################
+; Functions
+
+Var STR_HAYSTACK
+Var STR_NEEDLE
+Var STR_CONTAINS_VAR_1
+Var STR_CONTAINS_VAR_2
+Var STR_CONTAINS_VAR_3
+Var STR_CONTAINS_VAR_4
+Var STR_RETURN_VAR
+Var FirstIndex 
+
+Function StrContains
+  Exch $STR_NEEDLE
+  Exch 1
+  Exch $STR_HAYSTACK
+  ; Uncomment to debug
+  ;MessageBox MB_OK 'STR_NEEDLE = $STR_NEEDLE STR_HAYSTACK = $STR_HAYSTACK '
+    StrCpy $STR_RETURN_VAR ""
+    StrCpy $STR_CONTAINS_VAR_1 -1
+    StrLen $STR_CONTAINS_VAR_2 $STR_NEEDLE
+    StrLen $STR_CONTAINS_VAR_4 $STR_HAYSTACK
+    loop:
+      IntOp $STR_CONTAINS_VAR_1 $STR_CONTAINS_VAR_1 + 1
+      StrCpy $STR_CONTAINS_VAR_3 $STR_HAYSTACK $STR_CONTAINS_VAR_2 $STR_CONTAINS_VAR_1
+      StrCmp $STR_CONTAINS_VAR_3 $STR_NEEDLE found
+      StrCmp $STR_CONTAINS_VAR_1 $STR_CONTAINS_VAR_4 done
+      Goto loop
+    found:
+      StrCpy $STR_RETURN_VAR $STR_CONTAINS_VAR_1
+      Goto done
+    done:
+   Pop $STR_NEEDLE ;Prevent "invalid opcode" errors and keep the
+   Exch $STR_RETURN_VAR  
+FunctionEnd
+ 
+!macro _StrContainsConstructor OUT NEEDLE HAYSTACK
+  Push `${HAYSTACK}`
+  Push `${NEEDLE}`
+  Call StrContains
+  Pop `${OUT}`
+!macroend
+ 
+!define StrContains '!insertmacro "_StrContainsConstructor"'
+
+Function GetLineLastIndex
+  Exch $FirstIndex
+  Exch 1
+  Exch $STR_HAYSTACK
+  ; Uncomment to debug
+  ; MessageBox MB_OK 'FirstIndex = $FirstIndex STR_HAYSTACK = $STR_HAYSTACK '
+    StrCpy $STR_RETURN_VAR "-1"
+    StrCpy $STR_CONTAINS_VAR_1 $FirstIndex
+    StrLen $STR_CONTAINS_VAR_4 $STR_HAYSTACK
+    loop:
+      StrCpy $STR_CONTAINS_VAR_3 $STR_HAYSTACK 1 $STR_CONTAINS_VAR_1
+      StrCmp $STR_CONTAINS_VAR_3 "$\n" found
+      StrCmp $STR_CONTAINS_VAR_1 $STR_CONTAINS_VAR_4 found
+      IntOp $STR_CONTAINS_VAR_1 $STR_CONTAINS_VAR_1 + 1
+      Goto loop
+    found:
+      StrCpy $STR_RETURN_VAR $STR_CONTAINS_VAR_1
+      Goto done
+    done:
+   Pop $FirstIndex ;Prevent "invalid opcode" errors and keep the
+   Exch $STR_RETURN_VAR  
+FunctionEnd
+ 
+!macro _GetLineLastIndex OUT FirstIndex HAYSTACK
+  Push `${HAYSTACK}`
+  Push `${FirstIndex}`
+  Call GetLineLastIndex
+  Pop `${OUT}`
+!macroend
+ 
+!define GetLineLastIndex '!insertmacro "_GetLineLastIndex"'
+
+Var tempVal
+Var tempPath
+Var additionalPath
+Var versionTemp
+Var oldVersion
+Var len
+
+Function CheckPreDir
+    MessageBox MB_OK "${GPA_FOLDER_ALARM}"
+Functionend
+
+Function CheckLeaveDir
+
+    ; 1. find .uproject file - project install
+    FindFirst $0 $1 "$PluginsFolder\*.uproject"
+    StrCmp $0 "" check_engine_root 0
+    StrCpy $additionalPath "Plugins"
+    Goto check_gpa_version
+
+    ; 2. is Engine Root Folder - engine install
+    check_engine_root:
+
+      IfFileExists "$PluginsFolder\GenerateProjectFiles.bat"      0 check_engine_folder
+      IfFileExists "$PluginsFolder\GenerateProjectFiles.sh"       0 check_engine_folder
+      IfFileExists "$PluginsFolder\GenerateProjectFiles.command"  ue4_engine_root check_engine_folder
+
+        ue4_engine_root:
+        StrCpy $additionalPath "Engine\Plugins"
+        Goto check_gpa_version
+
+    ; 3. is Engine Folder
+    check_engine_folder:
+
+      IfFileExists "$PluginsFolder\Plugins" 0 check_plugins_folder
+      IfFileExists "$PluginsFolder\Build"   0 check_plugins_folder
+      IfFileExists "$PluginsFolder\Source"  ue4_engine_folder check_plugins_folder
+      
+        ue4_engine_folder:
+        StrCpy $additionalPath "Plugins"
+        Goto check_gpa_version
+
+    ; 4. is plugins Folder
+    check_plugins_folder:
+
+      ${GetFileName} "$PluginsFolder" $tempVal
+
+      StrCmp $tempVal "Plugins" 0 check_plugins_runtime_folder
+
+      ${GetParent} "$PluginsFolder" $tempVal
+
+      ${GetFileName} "$tempVal" $tempVal
+
+      StrCmp "$tempVal" "Engine" 0 check_plugins_runtime_folder
+
+        ; ue4_engine_plugins_folder:
+        Goto check_gpa_version
+
+    ; 5. is plugins/runtime Folder
+    check_plugins_runtime_folder:
+    
+      ${GetParent} "$PluginsFolder" $tempVal
+      Strcpy $tempPath "$tempVal"
+
+      ${GetFileName} "$tempVal" $tempVal
+
+      StrCmp "$tempVal" "Plugins" 0 not_gpa_valid_folder
+
+      ${GetParent} "$tempPath" $tempVal
+      ${GetFileName} "$tempVal" $tempVal
+
+      StrCmp "$tempVal" "Engine" 0 not_gpa_valid_folder
+
+        ; ue4_plugins_runtime_folder:
+        Goto check_gpa_version
+
+      not_gpa_valid_folder:
+
+      MessageBox mb_yesno|mb_iconquestion "${GPA_SELECT_ERROR}" idyes check_gpa_version
+      Abort
+
+    ; 6. check gpa version
+    check_gpa_version:
+
+      Strcpy $tempPath "$PluginsFolder"
+
+      StrCmp "$additionalPath" "" path_check 0
+      StrCpy $tempPath "$PluginsFolder\$additionalPath"
+
+      path_check:
+        IfFileExists "$tempPath\${PLUGIN_ROOT_FOLDER_NAME}" 0 end
+
+      ; do version check
+      ReadINIStr $oldVersion "$tempPath\${PLUGIN_ROOT_FOLDER_NAME}\GPA.ini" "Settings" "Version"
+
+      !ifdef GPA_INI
+
+        ${StrContains} $0 "Version=" "${GPA_INI}"
+        StrLen $Len "Version="
+        IntOp $0 $0 + $Len
+        ; MessageBox MB_OK '$0'
+        ${GetLineLastIndex} $1 $0 "${GPA_INI}"
+        ; MessageBox MB_OK '$1'
+        IntOp $Len $1 - $0
+        ; MessageBox MB_OK '$Len'
+        StrCpy $versionTemp ${GPA_INI} $Len $0
+
+      !else
+
+        StrCpy $versionTemp ${GPA_VERSION} ; version from jenkins
+
+      !endif
+
+      MessageBox mb_yesno|mb_iconquestion "${GPA_OVERWRITE}" idyes end
+      Abort
+
+      ; ${VersionCompare} "$versionTemp" "$oldVersion" $R0
+      ; version_equal:
+      ; StrCmp "$R0" "0" 0 0
+      ; StrCmp "$R0" "0" path_check 0
+      ; StrCmp "$R0" "0" path_check 0
+      ;    $var=0  Versions are equal
+      ;    $var=1  Version1 is newer
+      ;    $var=2  Version2 is newer
+
+    end:
+
+Functionend
+
+
+;##########################################################
+; SECTION - Install
+
+Section GPA
+ 
+  DetailPrint "${GPA_INSTALL_DETAIL}"
+  SetDetailsPrint listonly
+
+  StrCmp "$additionalPath" "" check_folder 0
+  Strcpy $PluginsFolder "$PluginsFolder\$additionalPath"
+
+check_folder:
+  IfFileExists "$PluginsFolder\${PLUGIN_ROOT_FOLDER_NAME}" 0 install  
+  RMDir /r "$PluginsFolder\${PLUGIN_ROOT_FOLDER_NAME}"
+
+install:
+  SetOutPath "$PluginsFolder\${PLUGIN_ROOT_FOLDER_NAME}"
+  File /r "..\GPA\"
+  WriteUninstaller "$PluginsFolder\${PLUGIN_ROOT_FOLDER_NAME}\Uninstall.exe"
+
+SectionEnd
+
+
+;##########################################################
+; SECTION - Uninstall
+
+Section Uninstall
+
+  RMDir /r "$INSTDIR"
+
+SectionEnd
